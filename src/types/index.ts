@@ -123,6 +123,12 @@ export interface GuardianConfig {
 
   /** Notification behaviour */
   readonly notifications: NotificationConfig;
+
+  /** Maldet-specific configuration */
+  readonly maldet?: {
+    readonly scan_recent?: boolean;
+    readonly recent_days?: number;
+  };
 }
 
 // ---------------------------------------------------------------------------

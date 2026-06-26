@@ -43,7 +43,11 @@ function createModule(id: string, config: GuardianConfig): IModule | null {
     case 'aide':
       return new AideModule();
     case 'maldet':
-      return new MaldetModule(config.scan_paths);
+      return new MaldetModule(
+        config.scan_paths,
+        config.maldet?.scan_recent,
+        config.maldet?.recent_days,
+      );
     case 'clamav':
       return new ClamavModule(config.scan_paths);
     case 'rkhunter':

@@ -29,6 +29,12 @@ scan_paths:
   - "/home"
   - "/tmp"
 
+# Maldet specific configurations (optional)
+maldet:
+  # Scan only files created/modified in the last X days (highly recommended for daily scans)
+  scan_recent: true
+  recent_days: 2
+
 # Directory for log files
 log_dir: "/var/log/vps-guardian"
 

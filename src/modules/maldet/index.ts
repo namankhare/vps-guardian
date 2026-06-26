@@ -14,12 +14,19 @@ export class MaldetModule extends BaseModule {
   readonly name = 'Maldet';
   readonly description = 'Linux Malware Detect — malware scanner';
 
-  /** Paths to scan, injected from the config. */
   private readonly scanPaths: string[];
+  private readonly scanRecent: boolean;
+  private readonly recentDays: number;
 
-  constructor(scanPaths: string[] = ['/var/www', '/home', '/tmp']) {
+  constructor(
+    scanPaths: string[] = ['/var/www', '/home', '/tmp'],
+    scanRecent = true,
+    recentDays = 2,
+  ) {
     super();
     this.scanPaths = scanPaths;
+    this.scanRecent = scanRecent;
+    this.recentDays = recentDays;
   }
 
   async isInstalled(): Promise<boolean> {
@@ -34,8 +41,12 @@ export class MaldetModule extends BaseModule {
       }
 
       const paths = this.scanPaths.join(',');
+      const args = this.scanRecent
+        ? ['--scan-recent', paths, String(this.recentDays)]
+        : ['--scan-all', paths];
+
       // Maldet scans can be very slow — allow up to 30 minutes
-      const result = await runCommand('maldet', ['--scan-all', paths], { timeoutMs: 1_800_000 });
+      const result = await runCommand('maldet', args, { timeoutMs: 1_800_000 });
 
       if (result.timedOut) {
         return this.buildResult(
@@ -43,7 +54,7 @@ export class MaldetModule extends BaseModule {
           'warning',
           'warning',
           'Maldet scan timed out — paths may be very large',
-          [`Scanned paths: ${paths}`],
+          [`Scanned paths: ${paths}`, `Scan type: ${this.scanRecent ? `recent (${String(this.recentDays)} days)` : 'all'}`],
         );
       }
 

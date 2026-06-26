@@ -32,6 +32,7 @@ function findConfigPath(): string | null {
 function applyDefaults(raw: Record<string, unknown>): GuardianConfig {
   const discord = (raw['discord'] ?? {}) as Record<string, unknown>;
   const notifications = (raw['notifications'] ?? {}) as Record<string, unknown>;
+  const maldet = (raw['maldet'] ?? {}) as Record<string, unknown>;
 
   return {
     hostname: String(raw['hostname'] ?? 'localhost'),
@@ -55,6 +56,10 @@ function applyDefaults(raw: Record<string, unknown>): GuardianConfig {
     notifications: {
       always_notify: Boolean(notifications['always_notify'] ?? false),
       include_details: Boolean(notifications['include_details'] ?? true),
+    },
+    maldet: {
+      scan_recent: maldet['scan_recent'] !== false,
+      recent_days: typeof maldet['recent_days'] === 'number' ? maldet['recent_days'] : 2,
     },
   };
 }
