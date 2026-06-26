@@ -46,10 +46,26 @@ section() { echo -e "\n${BOLD}━━ $* ━━━━━━━━━━━━━�
 # Checks
 # ---------------------------------------------------------------------------
 
-section "Pre-flight checks"
+# Attempt to discover node/npm in common locations (e.g. NVM) if not in PATH (common when running under sudo)
+if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+  for dir in "$HOME" "/root" "/home"/*; do
+    if [ -d "$dir/.nvm/versions/node" ]; then
+      nvm_bin=$(find "$dir/.nvm/versions/node" -maxdepth 2 -type d -name "bin" 2>/dev/null | sort -V | tail -n 1 || true)
+      if [ -n "$nvm_bin" ] && [ -x "$nvm_bin/node" ]; then
+        export PATH="$nvm_bin:$PATH"
+        break
+      fi
+    fi
+  done
+fi
 
-command -v node >/dev/null 2>&1 || error "Node.js is not installed. Install Node.js ≥ 18."
-command -v npm  >/dev/null 2>&1 || error "npm is not installed. It ships with Node.js."
+if ! command -v node >/dev/null 2>&1; then
+  error "Node.js is not found in PATH.\nIf Node.js is installed under a specific user (e.g. via NVM), try running: sudo -E bash $0\nor ensure Node.js is available in root's PATH."
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  error "npm is not found in PATH.\nIf npm is installed under a specific user (e.g. via NVM), try running: sudo -E bash $0\nor ensure npm is available in root's PATH."
+fi
 
 NODE_VERSION=$(node --version | cut -d. -f1 | tr -d 'v')
 if [ "$NODE_VERSION" -lt 18 ]; then
