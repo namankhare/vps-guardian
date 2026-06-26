@@ -22,7 +22,8 @@ VPS Guardian aggregates the output of your existing security tools — ClamAV, M
 - **RKHunter** — rootkit and backdoor detection
 - **Fail2Ban** — banned IP monitoring
 - **Discord notifications** — colour-coded embeds (green/yellow/red)
-- **Weekly security report** with overall score
+- **Weekly security report** with overall security score
+- **Background mode** — detach from SSH and get results on Discord
 - **Zero background services** — run on demand or via cron
 
 ---
@@ -33,31 +34,64 @@ VPS Guardian aggregates the output of your existing security tools — ClamAV, M
 - Node.js ≥ 18
 - pnpm ≥ 8
 
-Security tools are optional — modules automatically skip if the tool is not installed.
+Security tools are **optional** — modules automatically skip if the tool is not installed.
 
 ---
 
 ## Installation
 
+### On your VPS (recommended)
+
 ```bash
-# Clone the repository
-git clone https://github.com/haxworld/vps-guardian.git
-cd vps-guardian
+# 1. Install Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
 
-# Install dependencies
+# 2. Install pnpm
+npm install -g pnpm
+
+# 3. Clone and build
+sudo git clone https://github.com/YOUR_USERNAME/vps-guardian.git /opt/vps-guardian
+cd /opt/vps-guardian
 pnpm install
-
-# Build
 pnpm build
 
-# Link globally
-npm link
+# 4. Link the CLI globally
+sudo ln -sf /opt/vps-guardian/dist/cli/index.js /usr/local/bin/guardian
+sudo chmod +x /opt/vps-guardian/dist/cli/index.js
 ```
 
-Or use the install script:
+Or use the one-step install script:
 
 ```bash
 bash scripts/install.sh
+```
+
+### For local development
+
+```bash
+git clone https://github.com/YOUR_USERNAME/vps-guardian.git
+cd vps-guardian
+pnpm install
+pnpm build
+```
+
+---
+
+## Updating
+
+To update guardian to the latest version, run on your VPS:
+
+```bash
+sudo bash /opt/vps-guardian/scripts/update.sh
+```
+
+This pulls the latest code, reinstalls dependencies, and rebuilds. Your `guardian.yml` config is never touched.
+
+Or use the built-in CLI command:
+
+```bash
+guardian update
 ```
 
 ---
@@ -74,6 +108,7 @@ nano guardian.yml
 Minimum required config:
 
 ```yaml
+# Identifies this server in Discord notifications
 hostname: "my-vps"
 
 discord:
@@ -87,10 +122,10 @@ See [guardian.example.yml](./guardian.example.yml) for all available options.
 ## Usage
 
 ```bash
-# Detect installed security tools
+# Check which security tools are installed on this server
 guardian doctor
 
-# Display system health
+# Display system health (CPU, memory, disk, uptime, etc.)
 guardian health
 
 # Run all enabled modules
@@ -110,6 +145,13 @@ guardian report
 guardian scan --notify
 guardian report --notify
 
+# Run in the background — close SSH immediately, get results on Discord
+guardian scan --notify --detach
+guardian report --notify --detach
+
+# Update guardian to the latest version
+guardian update
+
 # Show version
 guardian version
 ```
@@ -121,24 +163,20 @@ guardian version
 | Flag | Description |
 |------|-------------|
 | `--notify` | Send results to Discord after the run |
+| `-d, --detach` | Run in the background — returns immediately, safe to close SSH |
 | `--verbose` | Show detailed module output |
-| `-d, --detach` | Run in the background — safe to close SSH immediately |
 | `--config <path>` | Use a custom config file path |
-| `--fail-fast` | Stop scan after first critical result (scan only) |
+| `--fail-fast` | Stop on first critical result (`scan` only) |
 
 ### Running in the background
 
-Add `--detach` (or `-d`) to any long-running command to immediately return control to your terminal. The process keeps running on the server and you receive results on Discord via `--notify`.
+Add `--detach` (or `-d`) to any command to immediately return control to your terminal. The process keeps running on the server and results arrive on Discord via `--notify`.
 
 ```bash
-guardian scan --notify --detach
+# Start, then close your SSH session — Discord will notify you when done
 guardian report --notify --detach
-guardian maldet --notify --detach
-```
 
-Output is written to `<log_dir>/background.log`:
-
-```bash
+# Watch the background log if you stay connected
 tail -f /var/log/vps-guardian/background.log
 ```
 
@@ -146,7 +184,7 @@ tail -f /var/log/vps-guardian/background.log
 
 ## Automatic Scans
 
-Use the included setup script to install a cron job on your VPS. It creates a **daily security scan** and a **weekly report**, both with Discord notifications.
+Use the included setup script to install a cron job. It creates a **daily security scan** and a **weekly report**, both with Discord notifications.
 
 ### Quick setup (recommended)
 
@@ -157,19 +195,17 @@ cd /opt/vps-guardian
 sudo bash scripts/setup-cron.sh
 ```
 
-This writes `/etc/cron.d/vps-guardian` with sensible defaults:
-- **Daily scan** at 2:00 AM UTC
-- **Weekly report** every Sunday at 8:00 AM UTC
+Defaults:
+- **Daily scan** — every day at 2:00 AM UTC
+- **Weekly report** — every Sunday at 8:00 AM UTC
 
 ### Custom schedule
 
 ```bash
-# Scan at 4 AM, report on Mondays at 9 AM, no Discord notification
 sudo bash scripts/setup-cron.sh \
   --scan-hour 4 \
   --report-hour 9 \
-  --report-day 1 \
-  --no-notify
+  --report-day 1      # 1 = Monday
 ```
 
 | Option | Default | Description |
@@ -180,30 +216,12 @@ sudo bash scripts/setup-cron.sh \
 | `--report-hour <0-23>` | `8` | Hour for weekly report (UTC) |
 | `--report-day <0-6>` | `0` | Day for weekly report (0 = Sunday) |
 | `--no-notify` | — | Disable Discord notifications |
-
-### Manual cron (alternative)
-
-If you prefer to write it yourself, add to `/etc/cron.d/vps-guardian`:
-
-```cron
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
-# Daily security scan at 2 AM UTC
-0 2 * * * root node /opt/vps-guardian/dist/cli/index.js scan --config /opt/vps-guardian/guardian.yml --notify >> /var/log/vps-guardian/cron.log 2>&1
-
-# Weekly report every Sunday at 8 AM UTC
-0 8 * * 0 root node /opt/vps-guardian/dist/cli/index.js report --config /opt/vps-guardian/guardian.yml --notify >> /var/log/vps-guardian/cron.log 2>&1
-```
+| `--uninstall` | — | Remove the cron job |
 
 ### Monitor logs
 
 ```bash
-# Watch live
 tail -f /var/log/vps-guardian/cron.log
-
-# Last scan
-grep "guardian scan" /var/log/vps-guardian/cron.log | tail -5
 ```
 
 ### Remove the cron job
@@ -214,30 +232,37 @@ sudo bash /opt/vps-guardian/scripts/setup-cron.sh --uninstall
 
 ---
 
-## Architecture
+## How it works
 
 ```
-CLI (commander)
-  ↓
-Core Runner
-  ↓
-Module Manager
-  ↓
-Security Modules (health, aide, maldet, clamav, rkhunter, fail2ban)
-  ↓
-ModuleResult
-  ↓
-Notifier (Discord)
+guardian scan / report
+      ↓
+Config Loader  — reads guardian.yml
+      ↓
+Module Manager — instantiates enabled modules
+      ↓
+Core Runner    — runs each module sequentially
+      ↓
+  HealthModule   → /proc, df, uptime
+  AideModule     → aide --check
+  MaldetModule   → maldet --scan-all
+  ClamavModule   → clamscan --recursive
+  RkhunterModule → rkhunter --check
+  Fail2banModule → fail2ban-client status
+      ↓
+ModuleResult   — { status, severity, summary, details }
+      ↓
+Notifier       — Discord embed (green / yellow / red)
 ```
 
-Each module is fully independent. Modules never communicate with each other. The app never throws — all errors are captured as `critical` results.
+Each module is fully independent. The app **never crashes** — all errors are captured as `critical` results and reported.
 
 ---
 
 ## Development
 
 ```bash
-# Run in dev mode (no build required)
+# Run without building
 pnpm dev doctor
 
 # Run tests
@@ -251,19 +276,17 @@ pnpm format
 pnpm build
 ```
 
----
-
-## Project Structure
+### Project Structure
 
 ```
 src/
-  cli/          ← Commander CLI entry point
-  core/         ← Runner, module manager, report generator
-  modules/      ← health, aide, maldet, clamav, rkhunter, fail2ban
-  notifier/     ← Discord webhook integration
-  config/       ← YAML config loader
-  types/        ← Shared TypeScript interfaces
-  utils/        ← exec, logger, format helpers
+  cli/        ← Commander CLI entry point
+  core/       ← Runner, module manager, report generator
+  modules/    ← health, aide, maldet, clamav, rkhunter, fail2ban
+  notifier/   ← Discord webhook integration
+  config/     ← YAML config loader
+  types/      ← Shared TypeScript interfaces
+  utils/      ← exec, logger, format helpers
 
 tests/
   core/
@@ -273,16 +296,20 @@ tests/
 
 docs/
   getting-started.md
+
+scripts/
+  install.sh      ← One-step VPS installer
+  setup-cron.sh   ← Automated cron job installer
 ```
 
 ---
 
 ## Contributing
 
-This project is in its early phase and there is plenty of room to improve. If you spot a bug, have an idea, or want to add support for a new tool — contributions are very welcome.
+This project is in its **early phase** — there is plenty of room to improve. If you spot a bug, have an idea, or want to add support for a new tool, contributions are very welcome.
 
 **Good first issues:**
-- Add support for a new security tool (follow the `IModule` interface in `src/modules/base.ts`)
+- Add support for a new security tool (follow the `IModule` interface in [`src/modules/base.ts`](./src/modules/base.ts))
 - Improve output parsing for an existing module
 - Add a Slack or Telegram notifier
 - Write more tests
@@ -292,10 +319,10 @@ This project is in its early phase and there is plenty of room to improve. If yo
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/your-feature`
 3. Make your changes and add tests where practical
-4. Run `pnpm test` and `pnpm build` to verify
+4. Run `pnpm test` and `pnpm build` to verify everything passes
 5. Open a Pull Request with a clear description of what and why
 
-Please follow the existing code style (Biome handles formatting — run `pnpm format` before committing).
+Please run `pnpm format` before committing — Biome enforces a consistent code style.
 
 ---
 

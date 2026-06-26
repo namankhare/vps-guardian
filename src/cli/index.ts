@@ -317,6 +317,38 @@ program
   });
 
 // ---------------------------------------------------------------------------
+// update — pull latest code and rebuild
+// ---------------------------------------------------------------------------
+
+program
+  .command('update')
+  .description('Update VPS Guardian to the latest version (runs scripts/update.sh)')
+  .option('--branch <name>', 'Branch to pull from', 'main')
+  .option('--install-dir <path>', 'Guardian install directory', '/opt/vps-guardian')
+  .action(async (opts: Record<string, unknown>) => {
+    const installDir = typeof opts['installDir'] === 'string' ? opts['installDir'] : '/opt/vps-guardian';
+    const branch = typeof opts['branch'] === 'string' ? opts['branch'] : 'main';
+    const updateScript = join(installDir, 'scripts', 'update.sh');
+
+    const { existsSync } = await import('node:fs');
+    if (!existsSync(updateScript)) {
+      console.error(`Update script not found at ${updateScript}`);
+      console.error('Make sure guardian is installed at the correct path.');
+      process.exit(1);
+    }
+
+    console.log(`Running update script from ${updateScript}...\n`);
+
+    const child = spawn('bash', [updateScript, '--install-dir', installDir, '--branch', branch], {
+      stdio: 'inherit',
+    });
+
+    child.on('close', (code) => {
+      process.exit(code ?? 0);
+    });
+  });
+
+// ---------------------------------------------------------------------------
 // version
 // ---------------------------------------------------------------------------
 
