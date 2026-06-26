@@ -108,11 +108,14 @@ fi
 
 section "Rebuilding"
 
-npm install --omit=dev
+npm install
 info "Dependencies installed ✓"
 
 npm run build
 info "Build complete ✓"
+
+npm prune --omit=dev
+info "Development dependencies pruned ✓"
 
 # ---------------------------------------------------------------------------
 # Done

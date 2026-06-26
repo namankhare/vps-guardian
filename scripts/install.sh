@@ -91,11 +91,14 @@ fi
 
 cd "$INSTALL_DIR"
 
-info "Installing Node.js dependencies (production only)"
-npm install --omit=dev
+info "Installing Node.js dependencies"
+npm install
 
 info "Building TypeScript"
 npm run build
+
+info "Pruning development dependencies"
+npm prune --omit=dev
 
 # ---------------------------------------------------------------------------
 # Link binary
