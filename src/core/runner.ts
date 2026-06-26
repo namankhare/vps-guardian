@@ -84,11 +84,13 @@ export function filterNotifiableResults(
   results: ModuleResult[],
   config: GuardianConfig,
 ): ModuleResult[] {
-  if (config.notifications.always_notify) return results;
+  // Skipped results are never notified regardless of settings
+  const nonSkipped = results.filter((r) => r.status !== 'skipped');
+
+  if (config.notifications.always_notify) return nonSkipped;
 
   const threshold = config.discord.notify_on;
-  return results.filter((r) => {
-    if (r.status === 'skipped') return false;
+  return nonSkipped.filter((r) => {
     if (threshold === 'always') return true;
     if (threshold === 'warning') return r.status === 'warning' || r.status === 'critical';
     if (threshold === 'critical') return r.status === 'critical';
