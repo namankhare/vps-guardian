@@ -6,6 +6,9 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-green.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org)
 
+> [!WARNING]
+> **This project is in early development.** APIs, config schema, and CLI commands may change between versions. Use in production at your own discretion and always pin to a specific commit/tag.
+
 VPS Guardian aggregates the output of your existing security tools — ClamAV, Maldet, AIDE, RKHunter, Fail2Ban — and sends clean, readable alerts to Discord. It never installs packages, removes malware, or modifies your system.
 
 ---
@@ -198,6 +201,28 @@ tests/
 docs/
   getting-started.md
 ```
+
+---
+
+## Contributing
+
+This project is in its early phase and there is plenty of room to improve. If you spot a bug, have an idea, or want to add support for a new tool — contributions are very welcome.
+
+**Good first issues:**
+- Add support for a new security tool (follow the `IModule` interface in `src/modules/base.ts`)
+- Improve output parsing for an existing module
+- Add a Slack or Telegram notifier
+- Write more tests
+- Improve documentation
+
+**How to contribute:**
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Make your changes and add tests where practical
+4. Run `pnpm test` and `pnpm build` to verify
+5. Open a Pull Request with a clear description of what and why
+
+Please follow the existing code style (Biome handles formatting — run `pnpm format` before committing).
 
 ---
 
