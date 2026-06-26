@@ -327,4 +327,4 @@ Please run `pnpm format` before committing — Biome enforces a consistent code 
 
 ## License
 
-MIT © HaxWorld
+MIT © Naman Khare

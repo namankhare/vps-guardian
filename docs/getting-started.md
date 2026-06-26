@@ -16,16 +16,16 @@ Ensure you have the following installed on your Ubuntu server:
 ### Option A: Quick Install Script
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/haxworld/vps-guardian/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/namankhare/vps-guardian/main/scripts/install.sh | bash
 ```
 
 ### Option B: Manual
 
 ```bash
-git clone https://github.com/haxworld/vps-guardian.git /opt/vps-guardian
+git clone https://github.com/namankhare/vps-guardian.git /opt/vps-guardian
 cd /opt/vps-guardian
-pnpm install
-pnpm build
+npm install --omit=dev
+npm run build
 ln -sf /opt/vps-guardian/dist/cli/index.js /usr/local/bin/guardian
 chmod +x /usr/local/bin/guardian
 ```

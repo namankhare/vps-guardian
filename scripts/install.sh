@@ -10,7 +10,7 @@ set -euo pipefail
 
 INSTALL_DIR="/opt/vps-guardian"
 BIN_DIR="/usr/local/bin"
-REPO_URL="https://github.com/haxworld/vps-guardian.git"
+REPO_URL="https://github.com/namankhare/vps-guardian.git"
 
 # Parse args
 while [[ $# -gt 0 ]]; do

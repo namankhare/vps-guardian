@@ -2,7 +2,7 @@
   "name": "vps-guardian",
   "version": "1.0.0",
   "description": "Lightweight, modular security monitoring CLI for Ubuntu servers",
-  "author": "HaxWorld",
+  "author": "Naman Khare",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -48,6 +48,6 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/haxworld/vps-guardian"
+    "url": "https://github.com/namankhare/vps-guardian"
   }
 }
