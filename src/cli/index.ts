@@ -18,7 +18,7 @@
 import { readFileSync, openSync, mkdirSync, writeFileSync, unlinkSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { Command } from 'commander';
 import { loadConfig, configExists } from '../config/loader.js';
 import { getAllModules, getEnabledModules, getSingleModule, MODULE_DESCRIPTIONS } from '../core/module-manager.js';
@@ -129,6 +129,13 @@ function handleSingleInstance(logDir: string): void {
           process.kill(oldPid, 'SIGKILL');
         } catch {
           // Already dead
+        }
+
+        // Kill orphaned sub-scanners to free resources
+        try {
+          execSync('killall maldet clamdscan clamscan rkhunter 2>/dev/null || true');
+        } catch {
+          // Ignore
         }
       }
     } catch {
