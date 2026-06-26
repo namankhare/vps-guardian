@@ -127,16 +127,72 @@ guardian version
 
 ---
 
-## Cron Example
+## Automatic Scans
 
-Add to `/etc/cron.d/vps-guardian`:
+Use the included setup script to install a cron job on your VPS. It creates a **daily security scan** and a **weekly report**, both with Discord notifications.
+
+### Quick setup (recommended)
+
+SSH into your VPS and run:
+
+```bash
+cd /opt/vps-guardian
+sudo bash scripts/setup-cron.sh
+```
+
+This writes `/etc/cron.d/vps-guardian` with sensible defaults:
+- **Daily scan** at 2:00 AM UTC
+- **Weekly report** every Sunday at 8:00 AM UTC
+
+### Custom schedule
+
+```bash
+# Scan at 4 AM, report on Mondays at 9 AM, no Discord notification
+sudo bash scripts/setup-cron.sh \
+  --scan-hour 4 \
+  --report-hour 9 \
+  --report-day 1 \
+  --no-notify
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--install-dir <path>` | `/opt/vps-guardian` | Where guardian is installed |
+| `--config <path>` | `<install-dir>/guardian.yml` | Path to config file |
+| `--scan-hour <0-23>` | `2` | Hour for daily scan (UTC) |
+| `--report-hour <0-23>` | `8` | Hour for weekly report (UTC) |
+| `--report-day <0-6>` | `0` | Day for weekly report (0 = Sunday) |
+| `--no-notify` | — | Disable Discord notifications |
+
+### Manual cron (alternative)
+
+If you prefer to write it yourself, add to `/etc/cron.d/vps-guardian`:
 
 ```cron
-# Daily security scan at 2am
-0 2 * * * root /usr/local/bin/guardian scan --notify
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-# Weekly report on Sundays at 8am
-0 8 * * 0 root /usr/local/bin/guardian report --notify
+# Daily security scan at 2 AM UTC
+0 2 * * * root node /opt/vps-guardian/dist/cli/index.js scan --config /opt/vps-guardian/guardian.yml --notify >> /var/log/vps-guardian/cron.log 2>&1
+
+# Weekly report every Sunday at 8 AM UTC
+0 8 * * 0 root node /opt/vps-guardian/dist/cli/index.js report --config /opt/vps-guardian/guardian.yml --notify >> /var/log/vps-guardian/cron.log 2>&1
+```
+
+### Monitor logs
+
+```bash
+# Watch live
+tail -f /var/log/vps-guardian/cron.log
+
+# Last scan
+grep "guardian scan" /var/log/vps-guardian/cron.log | tail -5
+```
+
+### Remove the cron job
+
+```bash
+sudo bash /opt/vps-guardian/scripts/setup-cron.sh --uninstall
 ```
 
 ---
