@@ -148,6 +148,10 @@ guardian report --notify
 guardian scan --notify --detach
 guardian report --notify --detach
 
+# View or follow Guardian background/app logs
+guardian logs
+guardian logs --follow
+
 # Update guardian to the latest version
 guardian update
 
@@ -176,7 +180,7 @@ Add `--detach` (or `-d`) to any command to immediately return control to your te
 guardian report --notify --detach
 
 # Watch the background log if you stay connected
-tail -f /var/log/vps-guardian/background.log
+guardian logs --follow
 ```
 
 ---

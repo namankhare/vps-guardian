@@ -317,6 +317,59 @@ program
   });
 
 // ---------------------------------------------------------------------------
+// logs — view or follow logs
+// ---------------------------------------------------------------------------
+
+program
+  .command('logs')
+  .description('View or follow Guardian logs')
+  .option('-f, --follow', 'Follow log output (like tail -f)')
+  .option('-n, --lines <number>', 'Number of lines to show', '20')
+  .option('-t, --type <type>', 'Log type to view: background, app, modules, error', 'background')
+  .option('-c, --config <path>', 'Path to guardian.yml')
+  .action(async (opts: Record<string, unknown>) => {
+    const { config: configPath } = parseGlobalOptions(opts);
+    const config = loadConfig(configPath);
+    const logType = String(opts['type'] ?? 'background');
+    const follow = opts['follow'] === true;
+    const lines = parseInt(String(opts['lines'] ?? '20'), 10);
+
+    const logFileMap: Record<string, string> = {
+      background: 'background.log',
+      app: 'app.log',
+      modules: 'modules.log',
+      error: 'error.log',
+    };
+
+    const fileName = logFileMap[logType] ?? 'background.log';
+    const filePath = join(config.log_dir, fileName);
+
+    const { existsSync } = await import('node:fs');
+    if (!existsSync(filePath)) {
+      console.log(`  Log file not found: ${filePath}`);
+      process.exit(0);
+    }
+
+    if (follow) {
+      console.log(`  Following log: ${filePath} (Press Ctrl+C to exit)\n`);
+      const child = spawn('tail', ['-n', String(lines), '-f', filePath], {
+        stdio: 'inherit',
+      });
+      child.on('close', (code) => {
+        process.exit(code ?? 0);
+      });
+      return;
+    }
+
+    const { readFile } = await import('node:fs/promises');
+    const content = await readFile(filePath, 'utf-8');
+    const linesArr = content.split('\n');
+    const lastLines = linesArr.slice(-lines - 1);
+    console.log(lastLines.join('\n').trim());
+    process.exit(0);
+  });
+
+// ---------------------------------------------------------------------------
 // update — pull latest code and rebuild
 // ---------------------------------------------------------------------------
 
