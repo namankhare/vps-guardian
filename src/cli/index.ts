@@ -3,18 +3,22 @@
  * VPS Guardian CLI — entry point.
  *
  * Commands:
- *   guardian doctor          — Detect installed software
- *   guardian health          — Display system health
- *   guardian scan            — Run all enabled modules
+ *   guardian doctor           — Detect installed software
+ *   guardian health           — Display system health
+ *   guardian scan             — Run all enabled modules
  *   guardian aide|maldet|...  — Run a single module
- *   guardian report          — Generate weekly security report
- *   guardian version         — Display version
- *   guardian help            — Display help
+ *   guardian report           — Generate weekly security report
+ *   guardian version          — Display version
+ *   guardian help             — Display help
+ *
+ * All long-running commands accept --detach (-d) to run in the background
+ * so the SSH session can be closed immediately.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, openSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { spawn } from 'node:child_process';
 import { Command } from 'commander';
 import { loadConfig, configExists } from '../config/loader.js';
 import { getAllModules, getEnabledModules, getSingleModule, MODULE_DESCRIPTIONS } from '../core/module-manager.js';
@@ -27,7 +31,7 @@ import {
   printResultsTable,
   printWeeklyReport,
   statusBadge,
-  statusIcon,
+  calculateSecurityScore,
 } from '../utils/format.js';
 
 // ---------------------------------------------------------------------------
@@ -52,6 +56,42 @@ program
   .version(pkg.version, '-v, --version', 'Display version number');
 
 // ---------------------------------------------------------------------------
+// Detach utility
+// ---------------------------------------------------------------------------
+
+/**
+ * If `--detach` was requested, re-spawn the same command without `--detach`,
+ * redirect its output to `logFile`, unref the child, and exit the parent.
+ *
+ * This lets the user close their SSH session immediately — the scan keeps
+ * running in the background and results arrive on Discord via --notify.
+ */
+function detachIfRequested(detach: boolean | undefined, logFile: string): void {
+  if (!detach) return;
+
+  // Strip --detach / -d from the forwarded args
+  const args = process.argv.slice(2).filter((a) => a !== '--detach' && a !== '-d');
+
+  // Ensure the log directory exists before opening the file
+  const logDir = logFile.substring(0, logFile.lastIndexOf('/'));
+  mkdirSync(logDir, { recursive: true });
+
+  const fd = openSync(logFile, 'a');
+
+  const child = spawn(process.execPath, [process.argv[1] ?? '', ...args], {
+    detached: true,
+    stdio: ['ignore', fd, fd],
+  });
+
+  child.unref();
+
+  console.log(`✓ Running in background — PID: ${String(child.pid)}`);
+  console.log(`  Logs: ${logFile}`);
+  console.log(`  Tip:  tail -f ${logFile}`);
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------------------
 // Shared options helper
 // ---------------------------------------------------------------------------
 
@@ -59,12 +99,14 @@ interface GlobalOptions {
   config?: string;
   verbose?: boolean;
   notify?: boolean;
+  detach?: boolean;
 }
 
 function parseGlobalOptions(opts: Record<string, unknown>): GlobalOptions {
   const result: GlobalOptions = {
     verbose: opts['verbose'] === true,
     notify: opts['notify'] === true,
+    detach: opts['detach'] === true,
   };
   if (typeof opts['config'] === 'string') {
     result.config = opts['config'];
@@ -127,12 +169,14 @@ program
   .option('-c, --config <path>', 'Path to guardian.yml')
   .option('--verbose', 'Show detailed output')
   .option('--notify', 'Send result to Discord')
+  .option('-d, --detach', 'Run in background — safe to close SSH')
   .action(async (opts: Record<string, unknown>) => {
-    const { config: configPath, verbose, notify: shouldNotify } = parseGlobalOptions(opts);
+    const { config: configPath, verbose, notify: shouldNotify, detach } = parseGlobalOptions(opts);
 
     const config = loadConfig(configPath);
-    const logger = new Logger(config.log_dir);
+    detachIfRequested(detach, `${config.log_dir}/background.log`);
 
+    const logger = new Logger(config.log_dir);
     logger.section('VPS Guardian — System Health');
 
     const { HealthModule } = await import('../modules/health/index.js');
@@ -160,13 +204,15 @@ program
   .option('--verbose', 'Show detailed output')
   .option('--notify', 'Send results to Discord')
   .option('--fail-fast', 'Stop after first critical result')
+  .option('-d, --detach', 'Run in background — safe to close SSH')
   .action(async (opts: Record<string, unknown>) => {
-    const { config: configPath, verbose, notify: shouldNotify } = parseGlobalOptions(opts);
+    const { config: configPath, verbose, notify: shouldNotify, detach } = parseGlobalOptions(opts);
     const failFast = opts['failFast'] === true;
 
     const config = loadConfig(configPath);
-    const logger = new Logger(config.log_dir);
+    detachIfRequested(detach, `${config.log_dir}/background.log`);
 
+    const logger = new Logger(config.log_dir);
     logger.section(`VPS Guardian — Full Scan (${config.hostname})`);
     console.log(`  Running ${config.modules.length} module(s)...\n`);
 
@@ -176,7 +222,7 @@ program
     printResultsTable(results, verbose);
 
     const overall = aggregateStatus(results);
-    const score = (await import('../utils/format.js')).calculateSecurityScore(results);
+    const score = calculateSecurityScore(results);
     console.log(`  Overall: ${statusBadge(overall)}   Score: ${formatScore(score)}\n`);
 
     if (shouldNotify || config.notifications.always_notify) {
@@ -203,9 +249,12 @@ for (const id of MODULE_IDS) {
     .option('-c, --config <path>', 'Path to guardian.yml')
     .option('--verbose', 'Show detailed output')
     .option('--notify', 'Send result to Discord')
+    .option('-d, --detach', 'Run in background — safe to close SSH')
     .action(async (opts: Record<string, unknown>) => {
-      const { config: configPath, verbose, notify: shouldNotify } = parseGlobalOptions(opts);
+      const { config: configPath, verbose, notify: shouldNotify, detach } = parseGlobalOptions(opts);
       const config = loadConfig(configPath);
+      detachIfRequested(detach, `${config.log_dir}/background.log`);
+
       const logger = new Logger(config.log_dir);
 
       const mod = getSingleModule(id, config);
@@ -239,11 +288,13 @@ program
   .option('-c, --config <path>', 'Path to guardian.yml')
   .option('--verbose', 'Show detailed output')
   .option('--notify', 'Send report to Discord')
+  .option('-d, --detach', 'Run in background — safe to close SSH')
   .action(async (opts: Record<string, unknown>) => {
-    const { config: configPath, verbose, notify: shouldNotify } = parseGlobalOptions(opts);
+    const { config: configPath, verbose, notify: shouldNotify, detach } = parseGlobalOptions(opts);
     const config = loadConfig(configPath);
-    const logger = new Logger(config.log_dir);
+    detachIfRequested(detach, `${config.log_dir}/background.log`);
 
+    const logger = new Logger(config.log_dir);
     logger.section(`VPS Guardian — Weekly Report (${config.hostname})`);
     console.log('  Collecting data from all enabled modules...\n');
 

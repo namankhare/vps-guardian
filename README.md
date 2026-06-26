@@ -122,8 +122,25 @@ guardian version
 |------|-------------|
 | `--notify` | Send results to Discord after the run |
 | `--verbose` | Show detailed module output |
+| `-d, --detach` | Run in the background — safe to close SSH immediately |
 | `--config <path>` | Use a custom config file path |
-| `--fail-fast` | Stop scan after first critical result |
+| `--fail-fast` | Stop scan after first critical result (scan only) |
+
+### Running in the background
+
+Add `--detach` (or `-d`) to any long-running command to immediately return control to your terminal. The process keeps running on the server and you receive results on Discord via `--notify`.
+
+```bash
+guardian scan --notify --detach
+guardian report --notify --detach
+guardian maldet --notify --detach
+```
+
+Output is written to `<log_dir>/background.log`:
+
+```bash
+tail -f /var/log/vps-guardian/background.log
+```
 
 ---
 
