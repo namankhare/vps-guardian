@@ -15,7 +15,7 @@
  * so the SSH session can be closed immediately.
  */
 
-import { readFileSync, openSync, mkdirSync } from 'node:fs';
+import { readFileSync, openSync, mkdirSync, writeFileSync, unlinkSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -76,7 +76,7 @@ function detachIfRequested(detach: boolean | undefined, logFile: string): void {
   const logDir = logFile.substring(0, logFile.lastIndexOf('/'));
   mkdirSync(logDir, { recursive: true });
 
-  const fd = openSync(logFile, 'a');
+  const fd = openSync(logFile, 'w');
 
   const child = spawn(process.execPath, [process.argv[1] ?? '', ...args], {
     detached: true,
@@ -89,6 +89,87 @@ function detachIfRequested(detach: boolean | undefined, logFile: string): void {
   console.log(`  Logs: ${logFile}`);
   console.log(`  Tip:  tail -f ${logFile}`);
   process.exit(0);
+}
+
+/**
+ * Handle PID tracking to ensure only one Guardian instance is running.
+ * Stops any previously running Guardian instance before starting a new one.
+ */
+function handleSingleInstance(logDir: string): void {
+  const pidFile = join(logDir, 'guardian.pid');
+
+  if (existsSync(pidFile)) {
+    try {
+      const oldPidStr = readFileSync(pidFile, 'utf-8').trim();
+      const oldPid = parseInt(oldPidStr, 10);
+      if (!isNaN(oldPid)) {
+        // Send signal 0 to check if process is alive
+        process.kill(oldPid, 0);
+        
+        console.log(`[INFO] Stopping previously running Guardian process (PID: ${String(oldPid)})...`);
+        process.kill(oldPid, 'SIGTERM');
+
+        // Wait up to 1 second (10 * 100ms) for it to exit
+        let retries = 10;
+        while (retries > 0) {
+          try {
+            process.kill(oldPid, 0);
+            // Sleep 100ms
+            const start = Date.now();
+            while (Date.now() - start < 100) {}
+            retries--;
+          } catch {
+            break;
+          }
+        }
+
+        // Force SIGKILL if it is still alive
+        try {
+          process.kill(oldPid, 0);
+          process.kill(oldPid, 'SIGKILL');
+        } catch {
+          // Already dead
+        }
+      }
+    } catch {
+      // Process is not running or other error, carry on
+    }
+  }
+
+  // Write our new PID to the file
+  try {
+    mkdirSync(logDir, { recursive: true });
+    writeFileSync(pidFile, String(process.pid), 'utf-8');
+    
+    // Clean up pid file on exit
+    const cleanup = () => {
+      try {
+        if (existsSync(pidFile)) {
+          const currentPid = readFileSync(pidFile, 'utf-8').trim();
+          if (currentPid === String(process.pid)) {
+            unlinkSync(pidFile);
+          }
+        }
+      } catch {
+        // Ignore
+      }
+    };
+
+    process.on('exit', cleanup);
+    process.on('SIGINT', () => process.exit(0));
+    process.on('SIGTERM', () => process.exit(0));
+  } catch {
+    // Ignore permissions/file write errors
+  }
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const secs = Math.floor(ms / 1000);
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60);
+  const remainingSecs = secs % 60;
+  return `${mins}m ${remainingSecs}s`;
 }
 
 // ---------------------------------------------------------------------------
@@ -175,6 +256,10 @@ program
 
     const config = loadConfig(configPath);
     detachIfRequested(detach, `${config.log_dir}/background.log`);
+    handleSingleInstance(config.log_dir);
+
+    const startTime = Date.now();
+    console.log(`Execution started at: ${new Date(startTime).toISOString()}`);
 
     const logger = new Logger(config.log_dir);
     logger.section('VPS Guardian — System Health');
@@ -190,6 +275,8 @@ program
       logger.success('Notification sent to Discord');
     }
 
+    const endTime = Date.now();
+    console.log(`\nExecution completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`);
     process.exit(result.status === 'critical' ? 1 : 0);
   });
 
@@ -211,6 +298,10 @@ program
 
     const config = loadConfig(configPath);
     detachIfRequested(detach, `${config.log_dir}/background.log`);
+    handleSingleInstance(config.log_dir);
+
+    const startTime = Date.now();
+    console.log(`Scan started at: ${new Date(startTime).toISOString()}`);
 
     const logger = new Logger(config.log_dir);
     logger.section(`VPS Guardian — Full Scan (${config.hostname})`);
@@ -233,6 +324,8 @@ program
       }
     }
 
+    const endTime = Date.now();
+    console.log(`\nScan completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`);
     process.exit(overall === 'critical' ? 2 : overall === 'warning' ? 1 : 0);
   });
 
@@ -254,6 +347,10 @@ for (const id of MODULE_IDS) {
       const { config: configPath, verbose, notify: shouldNotify, detach } = parseGlobalOptions(opts);
       const config = loadConfig(configPath);
       detachIfRequested(detach, `${config.log_dir}/background.log`);
+      handleSingleInstance(config.log_dir);
+
+      const startTime = Date.now();
+      console.log(`Execution started at: ${new Date(startTime).toISOString()}`);
 
       const logger = new Logger(config.log_dir);
 
@@ -274,6 +371,8 @@ for (const id of MODULE_IDS) {
       }
 
       const overall = aggregateStatus(results);
+      const endTime = Date.now();
+      console.log(`\nExecution completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`);
       process.exit(overall === 'critical' ? 2 : overall === 'warning' ? 1 : 0);
     });
 }
@@ -293,6 +392,10 @@ program
     const { config: configPath, verbose, notify: shouldNotify, detach } = parseGlobalOptions(opts);
     const config = loadConfig(configPath);
     detachIfRequested(detach, `${config.log_dir}/background.log`);
+    handleSingleInstance(config.log_dir);
+
+    const startTime = Date.now();
+    console.log(`Report run started at: ${new Date(startTime).toISOString()}`);
 
     const logger = new Logger(config.log_dir);
     logger.section(`VPS Guardian — Weekly Report (${config.hostname})`);
@@ -313,6 +416,8 @@ program
       logger.success('Weekly report sent to Discord');
     }
 
+    const endTime = Date.now();
+    console.log(`\nReport run completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`);
     process.exit(report.overallStatus === 'critical' ? 2 : report.overallStatus === 'warning' ? 1 : 0);
   });
 
