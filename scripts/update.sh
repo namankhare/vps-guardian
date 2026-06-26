@@ -97,13 +97,10 @@ REMOTE=$(git rev-parse "origin/$BRANCH")
 
 if [ "$LOCAL" = "$REMOTE" ]; then
   info "Already up to date — no changes to pull."
-  NEW_VERSION=$(node "$INSTALL_DIR/dist/cli/index.js" version 2>/dev/null | head -1 || echo "unknown")
-  info "Version: $NEW_VERSION"
-  exit 0
+else
+  git pull --ff-only origin "$BRANCH"
+  info "Code updated ✓"
 fi
-
-git pull --ff-only origin "$BRANCH"
-info "Code updated ✓"
 
 # ---------------------------------------------------------------------------
 # Reinstall dependencies and rebuild
