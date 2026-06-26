@@ -11,10 +11,7 @@ import yaml from 'js-yaml';
 import type { GuardianConfig } from '../types/index.js';
 
 /** Ordered list of config file locations to search */
-const CONFIG_SEARCH_PATHS = [
-  join(process.cwd(), 'guardian.yml'),
-  '/etc/guardian/guardian.yml',
-];
+const CONFIG_SEARCH_PATHS = [join(process.cwd(), 'guardian.yml'), '/etc/guardian/guardian.yml'];
 
 /**
  * Find the first existing config file path from the search list.

@@ -239,7 +239,7 @@ export class HealthModule extends BaseModule {
     const summary =
       issues.length === 0
         ? 'All resources within normal limits'
-        : issues[0] ?? 'System health issue detected';
+        : (issues[0] ?? 'System health issue detected');
 
     const details = [
       `CPU: ${h.cpuPercent}%`,

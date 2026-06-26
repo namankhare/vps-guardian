@@ -90,21 +90,14 @@ export class RkhunterModule extends BaseModule {
 
     if (warningCount > 0 || warnings.length > 0) {
       const count = warningCount > 0 ? warningCount : warnings.length;
-      return this.buildResult(
-        startedAt,
-        'warning',
-        'warning',
-        `${count} warning(s) found`,
-        [`Warnings: ${count}`, ...warnings.slice(0, 15)],
-      );
+      return this.buildResult(startedAt, 'warning', 'warning', `${count} warning(s) found`, [
+        `Warnings: ${count}`,
+        ...warnings.slice(0, 15),
+      ]);
     }
 
-    return this.buildResult(
-      startedAt,
-      'healthy',
-      'info',
-      'No rootkits or warnings detected',
-      ['RKHunter completed — system appears clean'],
-    );
+    return this.buildResult(startedAt, 'healthy', 'info', 'No rootkits or warnings detected', [
+      'RKHunter completed — system appears clean',
+    ]);
   }
 }

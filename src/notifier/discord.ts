@@ -16,10 +16,10 @@ import type { DiscordConfig, ModuleResult, ModuleStatus } from '../types/index.j
 // ---------------------------------------------------------------------------
 
 const STATUS_COLOR: Record<ModuleStatus, number> = {
-  healthy: 0x2ecc71,  // green
-  warning: 0xf39c12,  // yellow/orange
+  healthy: 0x2ecc71, // green
+  warning: 0xf39c12, // yellow/orange
   critical: 0xe74c3c, // red
-  skipped: 0x95a5a6,  // grey
+  skipped: 0x95a5a6, // grey
 };
 
 const STATUS_EMOJI: Record<ModuleStatus, string> = {

@@ -72,7 +72,9 @@ export class AideModule extends BaseModule {
 
     // Look for "Okay, found 0 differences" type lines
     const okMatch = output.match(/found (\d+) differences/i);
-    const diffCount = okMatch ? parseInt(okMatch[1] ?? '0', 10) : changed.length + added.length + removed.length;
+    const diffCount = okMatch
+      ? parseInt(okMatch[1] ?? '0', 10)
+      : changed.length + added.length + removed.length;
 
     if (!hasViolations || diffCount === 0) {
       return this.buildResult(
@@ -86,9 +88,13 @@ export class AideModule extends BaseModule {
 
     const details: string[] = [
       `Total differences: ${diffCount}`,
-      ...(changed.length > 0 ? [`Changed files (${changed.length}):`, ...changed.slice(0, 10)] : []),
+      ...(changed.length > 0
+        ? [`Changed files (${changed.length}):`, ...changed.slice(0, 10)]
+        : []),
       ...(added.length > 0 ? [`Added files (${added.length}):`, ...added.slice(0, 10)] : []),
-      ...(removed.length > 0 ? [`Removed files (${removed.length}):`, ...removed.slice(0, 10)] : []),
+      ...(removed.length > 0
+        ? [`Removed files (${removed.length}):`, ...removed.slice(0, 10)]
+        : []),
     ];
 
     if (changed.length + added.length + removed.length > 30) {

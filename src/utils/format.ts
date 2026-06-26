@@ -112,7 +112,10 @@ export function printResultsHeader(): void {
     c(BOLD, pad('SUMMARY', COL_WIDTH.summary)) +
     '  ' +
     c(BOLD, pad('TIME', COL_WIDTH.duration));
-  const sep = c(DIM, '─'.repeat(COL_WIDTH.name + COL_WIDTH.status + COL_WIDTH.summary + COL_WIDTH.duration + 6));
+  const sep = c(
+    DIM,
+    '─'.repeat(COL_WIDTH.name + COL_WIDTH.status + COL_WIDTH.summary + COL_WIDTH.duration + 6),
+  );
   console.log(`\n${header}`);
   console.log(sep);
 }

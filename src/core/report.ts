@@ -51,7 +51,12 @@ export async function sendWeeklyReport(
     module: 'report',
     name: 'Security Score',
     status: report.overallStatus,
-    severity: report.overallStatus === 'critical' ? 'critical' : report.overallStatus === 'warning' ? 'warning' : 'info',
+    severity:
+      report.overallStatus === 'critical'
+        ? 'critical'
+        : report.overallStatus === 'warning'
+          ? 'warning'
+          : 'info',
     summary: `Overall security score: ${report.securityScore}/100`,
     details: [
       `Total modules: ${results.length}`,

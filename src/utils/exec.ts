@@ -88,7 +88,8 @@ export async function commandExists(name: string): Promise<boolean> {
   }
 
   // Search $PATH entries
-  const pathEnv = process.env['PATH'] ?? '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
+  const pathEnv =
+    process.env['PATH'] ?? '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
   const dirs = pathEnv.split(':');
 
   for (const dir of dirs) {

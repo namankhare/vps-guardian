@@ -66,9 +66,7 @@ export class ClamavModule extends BaseModule {
     // clamscan exits 1 when viruses found, 0 for clean, 2 for errors
     if (exitCode === 2) {
       const errMsg = stderr || 'ClamAV returned an error';
-      return this.buildResult(startedAt, 'warning', 'warning', `ClamAV error: ${errMsg}`, [
-        errMsg,
-      ]);
+      return this.buildResult(startedAt, 'warning', 'warning', `ClamAV error: ${errMsg}`, [errMsg]);
     }
 
     // With --infected, stdout only shows infected files
@@ -78,13 +76,9 @@ export class ClamavModule extends BaseModule {
       .map((l) => l.trim());
 
     if (infectedLines.length === 0) {
-      return this.buildResult(
-        startedAt,
-        'healthy',
-        'info',
-        'No infected files found',
-        [`Paths scanned: ${this.scanPaths.join(', ')}`],
-      );
+      return this.buildResult(startedAt, 'healthy', 'info', 'No infected files found', [
+        `Paths scanned: ${this.scanPaths.join(', ')}`,
+      ]);
     }
 
     return this.buildResult(

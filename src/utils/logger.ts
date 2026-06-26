@@ -94,7 +94,9 @@ export class Logger {
     const line = `${ts} [MODULE] ${moduleId} → ${status} (${duration}ms)\n`;
     this.writeToFile('modules.log', line);
     const icon = this.statusIcon(status);
-    console.log(`  ${icon}  ${colorize(BOLD, moduleId.padEnd(12))} ${colorize(DIM, `${duration}ms`)}`);
+    console.log(
+      `  ${icon}  ${colorize(BOLD, moduleId.padEnd(12))} ${colorize(DIM, `${duration}ms`)}`,
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -103,7 +105,9 @@ export class Logger {
 
   /** Print a section header. */
   section(title: string): void {
-    console.log(`\n${colorize(BOLD + MAGENTA, `━━ ${title} `)}${'━'.repeat(Math.max(0, 50 - title.length - 3))}`);
+    console.log(
+      `\n${colorize(BOLD + MAGENTA, `━━ ${title} `)}${'━'.repeat(Math.max(0, 50 - title.length - 3))}`,
+    );
   }
 
   /** Print a success line. */

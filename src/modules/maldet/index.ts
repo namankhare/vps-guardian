@@ -54,7 +54,10 @@ export class MaldetModule extends BaseModule {
           'warning',
           'warning',
           'Maldet scan timed out — paths may be very large',
-          [`Scanned paths: ${paths}`, `Scan type: ${this.scanRecent ? `recent (${String(this.recentDays)} days)` : 'all'}`],
+          [
+            `Scanned paths: ${paths}`,
+            `Scan type: ${this.scanRecent ? `recent (${String(this.recentDays)} days)` : 'all'}`,
+          ],
         );
       }
 
@@ -82,13 +85,9 @@ export class MaldetModule extends BaseModule {
     }
 
     if (hits === 0 && hitLines.length === 0) {
-      return this.buildResult(
-        startedAt,
-        'healthy',
-        'info',
-        'No malware detected',
-        [`Paths scanned: ${this.scanPaths.join(', ')}`],
-      );
+      return this.buildResult(startedAt, 'healthy', 'info', 'No malware detected', [
+        `Paths scanned: ${this.scanPaths.join(', ')}`,
+      ]);
     }
 
     const count = hits > 0 ? hits : hitLines.length;

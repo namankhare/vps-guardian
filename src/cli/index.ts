@@ -21,7 +21,12 @@ import { dirname, join } from 'node:path';
 import { spawn, execSync } from 'node:child_process';
 import { Command } from 'commander';
 import { loadConfig, configExists } from '../config/loader.js';
-import { getAllModules, getEnabledModules, getSingleModule, MODULE_DESCRIPTIONS } from '../core/module-manager.js';
+import {
+  getAllModules,
+  getEnabledModules,
+  getSingleModule,
+  MODULE_DESCRIPTIONS,
+} from '../core/module-manager.js';
 import { runModules, aggregateStatus, filterNotifiableResults } from '../core/runner.js';
 import { generateReport, sendWeeklyReport } from '../core/report.js';
 import { notify } from '../notifier/index.js';
@@ -105,8 +110,10 @@ function handleSingleInstance(logDir: string): void {
       if (!isNaN(oldPid)) {
         // Send signal 0 to check if process is alive
         process.kill(oldPid, 0);
-        
-        console.log(`[INFO] Stopping previously running Guardian process (PID: ${String(oldPid)})...`);
+
+        console.log(
+          `[INFO] Stopping previously running Guardian process (PID: ${String(oldPid)})...`,
+        );
         process.kill(oldPid, 'SIGTERM');
 
         // Wait up to 1 second (10 * 100ms) for it to exit
@@ -147,7 +154,7 @@ function handleSingleInstance(logDir: string): void {
   try {
     mkdirSync(logDir, { recursive: true });
     writeFileSync(pidFile, String(process.pid), 'utf-8');
-    
+
     // Clean up pid file on exit
     const cleanup = () => {
       try {
@@ -237,7 +244,9 @@ program
       results.push({ name: mod.name, installed });
 
       if (installed) {
-        logger.success(`${mod.name.padEnd(14)} ${MODULE_DESCRIPTIONS[mod.id as keyof typeof MODULE_DESCRIPTIONS] ?? ''}`);
+        logger.success(
+          `${mod.name.padEnd(14)} ${MODULE_DESCRIPTIONS[mod.id as keyof typeof MODULE_DESCRIPTIONS] ?? ''}`,
+        );
       } else {
         logger.skipped(`${mod.name.padEnd(14)} not installed`);
       }
@@ -283,7 +292,9 @@ program
     }
 
     const endTime = Date.now();
-    console.log(`\nExecution completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`);
+    console.log(
+      `\nExecution completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`,
+    );
     process.exit(result.status === 'critical' ? 1 : 0);
   });
 
@@ -332,7 +343,9 @@ program
     }
 
     const endTime = Date.now();
-    console.log(`\nScan completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`);
+    console.log(
+      `\nScan completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`,
+    );
     process.exit(overall === 'critical' ? 2 : overall === 'warning' ? 1 : 0);
   });
 
@@ -351,7 +364,12 @@ for (const id of MODULE_IDS) {
     .option('--notify', 'Send result to Discord')
     .option('-d, --detach', 'Run in background — safe to close SSH')
     .action(async (opts: Record<string, unknown>) => {
-      const { config: configPath, verbose, notify: shouldNotify, detach } = parseGlobalOptions(opts);
+      const {
+        config: configPath,
+        verbose,
+        notify: shouldNotify,
+        detach,
+      } = parseGlobalOptions(opts);
       const config = loadConfig(configPath);
       detachIfRequested(detach, `${config.log_dir}/background.log`);
       handleSingleInstance(config.log_dir);
@@ -379,7 +397,9 @@ for (const id of MODULE_IDS) {
 
       const overall = aggregateStatus(results);
       const endTime = Date.now();
-      console.log(`\nExecution completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`);
+      console.log(
+        `\nExecution completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`,
+      );
       process.exit(overall === 'critical' ? 2 : overall === 'warning' ? 1 : 0);
     });
 }
@@ -424,8 +444,12 @@ program
     }
 
     const endTime = Date.now();
-    console.log(`\nReport run completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`);
-    process.exit(report.overallStatus === 'critical' ? 2 : report.overallStatus === 'warning' ? 1 : 0);
+    console.log(
+      `\nReport run completed at: ${new Date(endTime).toISOString()} (Duration: ${formatDuration(endTime - startTime)})`,
+    );
+    process.exit(
+      report.overallStatus === 'critical' ? 2 : report.overallStatus === 'warning' ? 1 : 0,
+    );
   });
 
 // ---------------------------------------------------------------------------
@@ -491,7 +515,8 @@ program
   .option('--branch <name>', 'Branch to pull from', 'main')
   .option('--install-dir <path>', 'Guardian install directory', '/opt/vps-guardian')
   .action(async (opts: Record<string, unknown>) => {
-    const installDir = typeof opts['installDir'] === 'string' ? opts['installDir'] : '/opt/vps-guardian';
+    const installDir =
+      typeof opts['installDir'] === 'string' ? opts['installDir'] : '/opt/vps-guardian';
     const branch = typeof opts['branch'] === 'string' ? opts['branch'] : 'main';
     const updateScript = join(installDir, 'scripts', 'update.sh');
 
