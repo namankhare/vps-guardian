@@ -1,7 +1,7 @@
 # VPS Guardian Configuration
 # Copy this file to guardian.yml and fill in your values.
 
-# Server hostname (used in notifications)
+# Server hostname (used in notifications to identify the vps)
 hostname: "my-vps"
 
 # Discord webhook URL for notifications
