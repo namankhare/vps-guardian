@@ -1,0 +1,40 @@
+# VPS Guardian Configuration
+# Copy this file to guardian.yml and fill in your values.
+
+# Server hostname (used in notifications)
+hostname: "my-vps"
+
+# Discord webhook URL for notifications
+discord:
+  webhook: "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
+  # Only send notifications for these statuses (warning, critical, or always)
+  notify_on: "warning"
+  # Username shown in Discord
+  username: "VPS Guardian"
+  # Avatar URL (optional)
+  avatar_url: ""
+
+# Modules to enable (comment out to disable)
+modules:
+  - health
+  - aide
+  - maldet
+  - clamav
+  - rkhunter
+  - fail2ban
+
+# Paths for malware scanners to scan
+scan_paths:
+  - "/var/www"
+  - "/home"
+  - "/tmp"
+
+# Directory for log files
+log_dir: "/var/log/vps-guardian"
+
+# Notification preferences
+notifications:
+  # Send a notification even if everything is healthy
+  always_notify: false
+  # Include details in notifications (may be long)
+  include_details: true
