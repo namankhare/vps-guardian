@@ -49,7 +49,7 @@ section() { echo -e "\n${BOLD}━━ $* ━━━━━━━━━━━━━�
 section "Pre-flight checks"
 
 command -v node >/dev/null 2>&1 || error "Node.js is not installed. Install Node.js ≥ 18."
-command -v pnpm >/dev/null 2>&1 || error "pnpm is not installed. Run: npm install -g pnpm"
+command -v npm  >/dev/null 2>&1 || error "npm is not installed. It ships with Node.js."
 
 NODE_VERSION=$(node --version | cut -d. -f1 | tr -d 'v')
 if [ "$NODE_VERSION" -lt 18 ]; then
@@ -57,7 +57,7 @@ if [ "$NODE_VERSION" -lt 18 ]; then
 fi
 
 info "Node.js: $(node --version) ✓"
-info "pnpm: $(pnpm --version) ✓"
+info "npm:     $(npm --version) ✓"
 
 # ---------------------------------------------------------------------------
 # Install
@@ -75,11 +75,11 @@ fi
 
 cd "$INSTALL_DIR"
 
-info "Installing Node.js dependencies"
-pnpm install --prod=false
+info "Installing Node.js dependencies (production only)"
+npm install --omit=dev
 
 info "Building TypeScript"
-pnpm build
+npm run build
 
 # ---------------------------------------------------------------------------
 # Link binary

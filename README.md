@@ -31,10 +31,12 @@ VPS Guardian aggregates the output of your existing security tools — ClamAV, M
 ## Requirements
 
 - Ubuntu 22.04 LTS or 24.04 LTS
-- Node.js ≥ 18
-- pnpm ≥ 8
+- Node.js ≥ 18 (npm is included)
 
 Security tools are **optional** — modules automatically skip if the tool is not installed.
+
+> [!NOTE]
+> **pnpm is only needed for local development.** On your VPS, the install and update scripts use `npm` — no extra setup required.
 
 ---
 
@@ -47,16 +49,13 @@ Security tools are **optional** — modules automatically skip if the tool is no
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# 2. Install pnpm
-npm install -g pnpm
-
-# 3. Clone and build
+# 2. Clone and build (npm is already installed with Node.js)
 sudo git clone https://github.com/YOUR_USERNAME/vps-guardian.git /opt/vps-guardian
 cd /opt/vps-guardian
-pnpm install
-pnpm build
+npm install --omit=dev   # installs only production dependencies
+npm run build
 
-# 4. Link the CLI globally
+# 3. Link the CLI globally
 sudo ln -sf /opt/vps-guardian/dist/cli/index.js /usr/local/bin/guardian
 sudo chmod +x /opt/vps-guardian/dist/cli/index.js
 ```
@@ -67,12 +66,12 @@ Or use the one-step install script:
 bash scripts/install.sh
 ```
 
-### For local development
+### For local development (Mac / Linux)
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/vps-guardian.git
 cd vps-guardian
-pnpm install
+pnpm install   # installs dev dependencies too (vitest, biome, tsx, etc.)
 pnpm build
 ```
 

@@ -54,6 +54,10 @@ if [ ! -d "$INSTALL_DIR/.git" ]; then
   error "No git repository found at $INSTALL_DIR. Is guardian installed there?"
 fi
 
+if ! command -v npm >/dev/null 2>&1; then
+  error "npm is not installed. It ships with Node.js."
+fi
+
 info "Install dir: $INSTALL_DIR"
 
 # ---------------------------------------------------------------------------
@@ -90,10 +94,10 @@ info "Code updated ✓"
 
 section "Rebuilding"
 
-pnpm install --frozen-lockfile
+npm install --omit=dev
 info "Dependencies installed ✓"
 
-pnpm build
+npm run build
 info "Build complete ✓"
 
 # ---------------------------------------------------------------------------
